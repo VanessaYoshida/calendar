@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Por onde começo hoje?</title>
+  <meta name="description" content="Dashboard de início de dia: emails, reuniões e tarefas em um só lugar." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:      #080c18;
+      --bg-surface:   #0e1428;
+      --bg-card:      rgba(255, 255, 255, 0.04);
+      --border:       rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.18);
+
+      --accent-blue:  #4f8ef7;
+      --accent-violet:#a78bfa;
+      --accent-teal:  #2dd4bf;
+      --accent-rose:  #fb7185;
+
+      --text-primary:   #e8eaf6;
+      --text-secondary: #8892b0;
+      --text-muted:     #4a5270;
+
+      --radius-card: 20px;
+      --transition:  0.3s ease;
+
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.45);
+      --shadow-glow-blue:   0 0 40px rgba(79, 142, 247, 0.15);
+      --shadow-glow-violet: 0 0 40px rgba(167, 139, 250, 0.15);
+      --shadow-glow-teal:   0 0 40px rgba(45, 212, 191, 0.15);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 80px;
+      overflow-x: hidden;
+    }
+
+    /* ── Background aurora ──────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 20% 10%, rgba(79, 142, 247, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(167, 139, 250, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 60% 30%, rgba(45, 212, 191, 0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 960px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header {
+      margin-bottom: 56px;
+      animation: fadeSlideDown 0.7s ease both;
+    }
+
+    .header__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .header__eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-teal);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    .header__title {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #e8eaf6 30%, var(--accent-violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .header__date {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      letter-spacing: 0.01em;
+    }
+
+    .header__date strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ── Cards grid ─────────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── Card ───────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 32px 28px 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-card);
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+      animation: fadeSlideUp 0.7s ease both;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+
+    /* top accent stripe */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius-card) var(--radius-card) 0 0;
+      opacity: 0.85;
+      transition: opacity var(--transition);
+    }
+
+    /* inner glow */
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity var(--transition);
+      pointer-events: none;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-5px);
+    }
+    .card:hover::after { opacity: 1; }
+
+    /* ── Card: Emails ───────────────────────────────────────────── */
+    .card--emails::before { background: linear-gradient(90deg, var(--accent-blue), #818cf8); }
+    .card--emails:hover   { box-shadow: var(--shadow-card), var(--shadow-glow-blue); }
+    .card--emails::after  { box-shadow: inset 0 0 60px rgba(79, 142, 247, 0.07); }
+    .card--emails .card__icon { color: var(--accent-blue); background: rgba(79, 142, 247, 0.12); }
+    .card--emails .card__number { color: var(--accent-blue); }
+
+    /* ── Card: Reuniões ─────────────────────────────────────────── */
+    .card--meetings::before { background: linear-gradient(90deg, var(--accent-violet), #ec4899); }
+    .card--meetings:hover   { box-shadow: var(--shadow-card), var(--shadow-glow-violet); }
+    .card--meetings::after  { box-shadow: inset 0 0 60px rgba(167, 139, 250, 0.07); }
+    .card--meetings .card__icon { color: var(--accent-violet); background: rgba(167, 139, 250, 0.12); }
+    .card--meetings .card__number { color: var(--accent-violet); }
+
+    /* ── Card: Tarefas ──────────────────────────────────────────── */
+    .card--tasks::before { background: linear-gradient(90deg, var(--accent-teal), #34d399); }
+    .card--tasks:hover   { box-shadow: var(--shadow-card), var(--shadow-glow-teal); }
+    .card--tasks::after  { box-shadow: inset 0 0 60px rgba(45, 212, 191, 0.07); }
+    .card--tasks .card__icon { color: var(--accent-teal); background: rgba(45, 212, 191, 0.12); }
+    .card--tasks .card__number { color: var(--accent-teal); }
+
+    /* ── Card internals ─────────────────────────────────────────── */
+    .card__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .card__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .card__badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .card__number {
+      font-size: clamp(3rem, 6vw, 4rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .card__label {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .card__sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .card__footer {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card__footer-text {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .card__footer-arrow {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      transition: transform var(--transition), color var(--transition);
+    }
+
+    .card:hover .card__footer-arrow {
+      transform: translateX(4px);
+      color: var(--text-secondary);
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    .page-footer {
+      margin-top: 64px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      animation: fadeIn 1s ease 0.6s both;
+    }
+
+    /* ── Animations ─────────────────────────────────────────────── */
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    /* ── Chart section ──────────────────────────────────────────── */
+    .chart-section {
+      margin-top: 28px;
+      animation: fadeSlideUp 0.7s ease 0.4s both;
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 28px 28px 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius-card) var(--radius-card) 0 0;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-violet), var(--accent-teal));
+    }
+
+    .chart-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-card), 0 0 48px rgba(79, 142, 247, 0.1);
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .chart-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-title__icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(79, 142, 247, 0.12);
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .chart-title__text {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .chart-title__sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .chart-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chart-stat {
+      text-align: right;
+    }
+
+    .chart-stat__value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      line-height: 1;
+    }
+
+    .chart-stat__label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 3px;
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      height: 200px;
+    }
+
+    /* ── Agenda section ──────────────────────────────────────────── */
+    .agenda-section {
+      margin-top: 28px;
+      animation: fadeSlideUp 0.7s ease 0.5s both;
+    }
+
+    .agenda-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 28px 28px 8px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .agenda-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius-card) var(--radius-card) 0 0;
+      background: linear-gradient(90deg, var(--accent-violet), var(--accent-rose));
+    }
+
+    .agenda-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-card), 0 0 48px rgba(167, 139, 250, 0.1);
+    }
+
+    .agenda-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .agenda-card__title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .agenda-card__icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(167, 139, 250, 0.12);
+      color: var(--accent-violet);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .agenda-card__title-text {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .agenda-card__title-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .agenda-card__count {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(167, 139, 250, 0.1);
+      color: var(--accent-violet);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+    }
+
+    /* ── Event list ── */
+    .event-list {
+      list-style: none;
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    /* vertical timeline line */
+    .event-list::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 28px;
+      left: 0;
+      width: 2px;
+      border-radius: 2px;
+      background: linear-gradient(to bottom, var(--accent-violet), rgba(167, 139, 250, 0.05));
+    }
+
+    .event-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      transition: background var(--transition);
+      animation: fadeSlideUp 0.5s ease both;
+    }
+
+    .event-item:nth-child(1) { animation-delay: 0.55s; }
+    .event-item:nth-child(2) { animation-delay: 0.65s; }
+    .event-item:nth-child(3) { animation-delay: 0.75s; }
+    .event-item:nth-child(4) { animation-delay: 0.85s; }
+
+    .event-item:last-child { border-bottom: none; }
+
+    /* dot on timeline */
+    .event-item::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 21px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--dot-color, var(--accent-violet));
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.12);
+      z-index: 1;
+    }
+
+    .event-item--now::before  { background: var(--accent-teal);   box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15); }
+    .event-item--past::before { background: var(--text-muted);    box-shadow: none; }
+
+    .event-time {
+      flex-shrink: 0;
+      width: 52px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding-top: 2px;
+      letter-spacing: 0.02em;
+    }
+
+    .event-item--now  .event-time { color: var(--accent-teal); }
+    .event-item--past .event-time { color: var(--text-muted); opacity: 0.6; }
+
+    .event-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .event-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-item--past .event-title {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .event-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .event-duration {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .event-tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .event-tag--now  { background: rgba(45, 212, 191, 0.12); color: var(--accent-teal); border: 1px solid rgba(45, 212, 191, 0.2); }
+    .event-tag--next { background: rgba(167, 139, 250, 0.10); color: var(--accent-violet); border: 1px solid rgba(167, 139, 250, 0.2); }
+    .event-tag--past { background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--border); }
+
+    .event-cal-icon {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      padding-top: 1px;
+      opacity: 0.7;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: 32px 16px 60px; }
+      .header { margin-bottom: 36px; }
+      .cards-grid { gap: 14px; }
+      .chart-canvas-wrap { height: 160px; }
+      .event-time { width: 44px; font-size: 0.78rem; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- ── Header ── -->
+    <header class="header">
+      <p class="header__eyebrow">
+        <span class="dot"></span>
+        Seu resumo matinal
+      </p>
+      <h1 class="header__title">Por onde começo hoje?</h1>
+      <p class="header__date">
+        <strong>Sábado, 31 de maio de 2025</strong> &nbsp;·&nbsp; Bom trabalho!
+      </p>
+    </header>
+
+    <!-- ── Cards ── -->
+    <section class="cards-grid" aria-label="Resumo do dia">
+
+      <!-- Emails -->
+      <article class="card card--emails" id="card-emails">
+        <div class="card__header">
+          <div class="card__icon" aria-hidden="true">✉️</div>
+          <span class="card__badge">Gmail</span>
+        </div>
+        <div class="card__number" aria-label="12 emails não lidos">12</div>
+        <div class="card__label">Emails não lidos</div>
+        <div class="card__sub">3 marcados como importantes</div>
+        <div class="card__footer">
+          <span class="card__footer-text">Último recebido há 18 min</span>
+          <span class="card__footer-arrow">→</span>
+        </div>
+      </article>
+
+      <!-- Reuniões -->
+      <article class="card card--meetings" id="card-meetings">
+        <div class="card__header">
+          <div class="card__icon" aria-hidden="true">📅</div>
+          <span class="card__badge">Calendar</span>
+        </div>
+        <div class="card__number" aria-label="3 reuniões hoje">3</div>
+        <div class="card__label">Reuniões hoje</div>
+        <div class="card__sub">Próxima às 10h00 — Stand-up</div>
+        <div class="card__footer">
+          <span class="card__footer-text">Em 42 minutos</span>
+          <span class="card__footer-arrow">→</span>
+        </div>
+      </article>
+
+      <!-- Tarefas -->
+      <article class="card card--tasks" id="card-tasks">
+        <div class="card__header">
+          <div class="card__icon" aria-hidden="true">✅</div>
+          <span class="card__badge">Tasks</span>
+        </div>
+        <div class="card__number" aria-label="7 tarefas pendentes">7</div>
+        <div class="card__label">Tarefas pendentes</div>
+        <div class="card__sub">2 com prazo para hoje</div>
+        <div class="card__footer">
+          <span class="card__footer-text">2 de alta prioridade</span>
+          <span class="card__footer-arrow">→</span>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ── Chart ── -->
+    <section class="chart-section" aria-label="Volume de emails na semana">
+      <div class="chart-card" id="chart-card-emails">
+        <div class="chart-header">
+          <div class="chart-title">
+            <div class="chart-title__icon" aria-hidden="true">📊</div>
+            <div>
+              <div class="chart-title__text">Volume de emails na semana</div>
+              <div class="chart-title__sub">Últimos 7 dias — contexto do dia de hoje</div>
+            </div>
+          </div>
+          <div class="chart-meta">
+            <div class="chart-stat">
+              <div class="chart-stat__value">72</div>
+              <div class="chart-stat__label">Total na semana</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="emailVolumeChart" aria-label="Gráfico de barras: volume de emails nos últimos 7 dias"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Agenda ── -->
+    <section class="agenda-section" aria-label="Agenda de hoje">
+      <div class="agenda-card" id="agenda-hoje">
+
+        <div class="agenda-card__header">
+          <div class="agenda-card__title">
+            <div class="agenda-card__icon" aria-hidden="true">🗓️</div>
+            <div>
+              <div class="agenda-card__title-text">Agenda de hoje</div>
+              <div class="agenda-card__title-sub">Sábado, 31 de maio · 4 eventos</div>
+            </div>
+          </div>
+          <span class="agenda-card__count">4 eventos</span>
+        </div>
+
+        <ul class="event-list" role="list">
+
+          <!-- Evento 1 — passado -->
+          <li class="event-item event-item--past" id="event-standup">
+            <span class="event-cal-icon" aria-hidden="true">📅</span>
+            <span class="event-time">09:00</span>
+            <div class="event-body">
+              <div class="event-title">Daily da equipe</div>
+              <div class="event-meta">
+                <span class="event-duration">⏱ 15 min</span>
+                <span class="event-tag event-tag--past">Concluído</span>
+              </div>
+            </div>
+          </li>
+
+          <!-- Evento 2 — acontecendo agora -->
+          <li class="event-item event-item--now" id="event-sync">
+            <span class="event-cal-icon" aria-hidden="true">📅</span>
+            <span class="event-time">10:00</span>
+            <div class="event-body">
+              <div class="event-title">Sync de produto — Sprint 22</div>
+              <div class="event-meta">
+                <span class="event-duration">⏱ 45 min</span>
+                <span class="event-tag event-tag--now">Agora</span>
+              </div>
+            </div>
+          </li>
+
+          <!-- Evento 3 — próximo -->
+          <li class="event-item" id="event-1on1">
+            <span class="event-cal-icon" aria-hidden="true">📅</span>
+            <span class="event-time">14:00</span>
+            <div class="event-body">
+              <div class="event-title">1:1 com gerente</div>
+              <div class="event-meta">
+                <span class="event-duration">⏱ 30 min</span>
+                <span class="event-tag event-tag--next">Próximo</span>
+              </div>
+            </div>
+          </li>
+
+          <!-- Evento 4 -->
+          <li class="event-item" id="event-review">
+            <span class="event-cal-icon" aria-hidden="true">📅</span>
+            <span class="event-time">16:30</span>
+            <div class="event-body">
+              <div class="event-title">Revisão de código — PR #148</div>
+              <div class="event-meta">
+                <span class="event-duration">⏱ 1 hora</span>
+              </div>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── Page footer ── -->
+    <footer class="page-footer">
+      Conectado ao Gmail &amp; Google Calendar · Atualizado às 09:12
+    </footer>
+
+    <script>
+      (function () {
+        const labels  = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Hoje'];
+        const data    = [12, 5, 8, 20, 3, 15, 9];
+        const todayIdx = data.length - 1;
+
+        const bgColors = data.map((_, i) =>
+          i === todayIdx
+            ? 'rgba(79, 142, 247, 0.90)'
+            : 'rgba(79, 142, 247, 0.22)'
+        );
+        const borderColors = data.map((_, i) =>
+          i === todayIdx
+            ? 'rgba(79, 142, 247, 1)'
+            : 'rgba(79, 142, 247, 0.45)'
+        );
+        const hoverColors = data.map((_, i) =>
+          i === todayIdx
+            ? 'rgba(79, 142, 247, 1)'
+            : 'rgba(79, 142, 247, 0.50)'
+        );
+
+        const ctx = document.getElementById('emailVolumeChart').getContext('2d');
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Emails',
+              data,
+              backgroundColor: bgColors,
+              hoverBackgroundColor: hoverColors,
+              borderColor: borderColors,
+              borderWidth: 1.5,
+              borderRadius: 8,
+              borderSkipped: false,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 900,
+              easing: 'easeOutQuart',
+              delay: (ctx) => ctx.dataIndex * 80,
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(14, 20, 40, 0.95)',
+                borderColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                titleColor: '#e8eaf6',
+                bodyColor: '#8892b0',
+                padding: 12,
+                cornerRadius: 10,
+                callbacks: {
+                  label: (item) => ` ${item.raw} emails recebidos`,
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                border: { display: false },
+                ticks: {
+                  color: '#4a5270',
+                  font: { family: "'Outfit', sans-serif", size: 12, weight: '500' },
+                  callback: (val, i) => {
+                    const lbl = labels[i];
+                    return i === todayIdx ? '▶ ' + lbl : lbl;
+                  }
+                }
+              },
+              y: {
+                grid: {
+                  color: 'rgba(255,255,255,0.04)',
+                  drawBorder: false,
+                },
+                border: { display: false, dash: [4, 4] },
+                ticks: {
+                  color: '#4a5270',
+                  font: { family: "'Outfit', sans-serif", size: 11 },
+                  stepSize: 5,
+                  padding: 8,
+                },
+                beginAtZero: true,
+              }
+            }
+          }
+        });
+      })();
+    </script>
+
+  </div>
+</body>
+</html>
