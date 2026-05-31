@@ -20,7 +20,7 @@ O projeto simula um painel de controle matinal unificado (Dashboard), consolidan
 ## 🚀 Tecnologias Utilizadas
 
 * **Google Antigravity IDE:** Plataforma e ecossistema de agentes usada no processo de concepção e escrita do código.
-* **HTML5 / CSS3 / JavaScript:** Tecnologias base para a construção e estilização da interface web do dashboard.
+* **HTML5:** Tecnologias base para a construção e estilização da interface web do dashboard.
 * **GitHub Pages:** Hospedagem gratuita e publicação do ambiente estático.
 
 ---
